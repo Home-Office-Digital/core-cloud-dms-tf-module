@@ -5,4 +5,4 @@ Semantic versioning (https://semver.org/) must be adhered to for all Core Cloud 
 
 ### [Unreleased]
 
-- Repository skeleton: CI workflows (Terraform validate, fmt, test, TFLint, Checkov, SonarQube), semantic versioning workflows, Dependabot, CODEOWNERS and provider requirements.
+- Repository skeleton: CI workflows (Terraform validate, fmt, test, TFLint, Checkov, SonarQube), semantic versioning workflows, Dependabot, CODEOWNERS, contributing guide, code of conduct and provider requirements.
