@@ -186,6 +186,8 @@ resource "aws_dms_replication_config" "this" {
   depends_on = [aws_iam_role_policy_attachment.dms_cloudwatch_logs]
 
   lifecycle {
+    ignore_changes = [start_replication]
+
     precondition {
       condition     = var.min_capacity_units <= var.max_capacity_units
       error_message = "min_capacity_units must not be greater than max_capacity_units."
