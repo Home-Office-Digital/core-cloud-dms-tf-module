@@ -4,8 +4,8 @@ variable "name" {
   nullable    = false
 
   validation {
-    condition     = can(regex("^[a-z][a-z0-9-]{1,40}[a-z0-9]$", var.name)) && !strcontains(var.name, "--")
-    error_message = "name must be 3-42 characters of lowercase letters, numbers and hyphens, starting with a letter, not ending with a hyphen and not containing consecutive hyphens."
+    condition     = can(regex("^[a-z][a-z0-9-]{1,40}[a-z0-9]$", var.name)) && !strcontains(var.name, "--") && !startswith(var.name, "sg-")
+    error_message = "name must be 3-42 characters of lowercase letters, numbers and hyphens, starting with a letter, not ending with a hyphen, not containing consecutive hyphens and not starting with sg- (reserved by EC2 for security groups)."
   }
 }
 

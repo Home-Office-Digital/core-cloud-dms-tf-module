@@ -121,3 +121,13 @@ run "rejects_wildcard_characters_in_schema_names" {
 
   expect_failures = [var.include_schemas]
 }
+
+run "rejects_reserved_sg_prefix" {
+  command = plan
+
+  variables {
+    name = "sg-test"
+  }
+
+  expect_failures = [var.name]
+}

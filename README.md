@@ -25,6 +25,8 @@ You need:
 - **A target database** that allows inbound 5432 from `subnet_ids`, with the target database already created. With `core-cloud-rds-tf-module`, set `database_name` and `allowed_cidr_blocks`.
 - **A customer managed KMS key.** Use `core-cloud-kms-tf-module` if you do not have one.
 - **Two Secrets Manager secrets**, one for the source and one for the target, each with `host`, `port`, `username` and `password`. RDS-managed master user secrets cannot be used, because they do not include `host` and `port`.
+- **A primary key or unique index** on every source table with LOB columns (such as `bytea` and `text`). Full LOB mode needs one, even for a full load.
+- **No partitioned tables** in the selected schemas. Selecting a whole schema includes partition parents and their child partitions, which duplicates rows on the target.
 
 ## Usage
 
@@ -57,7 +59,13 @@ module "systems_register_dms" {
     budget-holder    = "budget@example.com"
   }
 }
+
+output "replication_config_arn" {
+  value = module.systems_register_dms.replication_config_arn
+}
 ```
+
+This is a full load only, so changes made on the source after a table is copied are not migrated. Before you start, stop writes to the source and let open transactions finish. Keep the source read-only until you have validated the target and cut over.
 
 After apply, start the replication. DMS connects to the source, provisions capacity, then loads the data, so expect a wait before rows start to move:
 
