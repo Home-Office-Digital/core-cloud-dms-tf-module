@@ -5,8 +5,8 @@ Semantic versioning (https://semver.org/) must be adhered to for all Core Cloud 
 
 ### [0.2.0] Unreleased
 
-- One-off full-load migration from RDS PostgreSQL to RDS PostgreSQL using DMS Serverless.
-- PostgreSQL source and target endpoints using Secrets Manager credentials, required SSL and a customer managed KMS key.
+- One-off full-load database migration using DMS Serverless.
+- Source and target endpoints using Secrets Manager credentials, required SSL and a customer managed KMS key.
 - Security group with egress scoped to the source, the target and the AWS service VPC endpoints.
 - IAM role for DMS to read the endpoint secrets, and optional account-level `dms-vpc-role` and `dms-cloudwatch-logs-role`.
 - Table mappings generated from `include_schemas`.

@@ -84,13 +84,13 @@ variable "aws_service_cidr_blocks" {
 }
 
 variable "source_database_name" {
-  description = "Name of the PostgreSQL database to migrate from."
+  description = "Name of the database to migrate from."
   type        = string
   nullable    = false
 }
 
 variable "target_database_name" {
-  description = "Name of the PostgreSQL database to migrate into. It must already exist on the target."
+  description = "Name of the database to migrate into. It must already exist on the target."
   type        = string
   nullable    = false
 }

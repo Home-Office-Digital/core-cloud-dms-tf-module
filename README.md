@@ -1,6 +1,6 @@
 # Core Cloud DMS Terraform Module
 
-Use this module to migrate an RDS PostgreSQL database into an RDS PostgreSQL database in a Core Cloud account, for example from ACP RDS, with AWS Database Migration Service (DMS).
+Use this module to migrate a database into a Core Cloud account, for example from ACP RDS, with AWS Database Migration Service (DMS).
 
 It runs a one-off full load using DMS Serverless. Change data capture (CDC), other engines and provisioned replication instances are not supported yet.
 
@@ -9,7 +9,7 @@ This module includes the following checks and scans: Terraform validate, Terrafo
 ## What it creates
 
 - A DMS Serverless full-load replication, encrypted with your KMS key, that does not start on apply
-- PostgreSQL source and target endpoints, using Secrets Manager credentials, required SSL and your KMS key
+- Source and target endpoints, using Secrets Manager credentials, required SSL and your KMS key
 - A security group allowing DMS outbound only to the source, the target and the Secrets Manager and KMS VPC endpoints
 - An IAM role that lets DMS read the two endpoint secrets
 - The account-level `dms-vpc-role` and `dms-cloudwatch-logs-role`, unless you turn them off
@@ -20,7 +20,7 @@ This module includes the following checks and scans: Terraform validate, Terrafo
 You need:
 
 - **Network access to the source.** The source database must allow inbound 5432 from `subnet_ids`. For ACP RDS, ask ACP to add the subnet CIDRs to the RDS security group.
-- **A target RDS PostgreSQL instance** that allows inbound 5432 from `subnet_ids`, with the target database already created. With `core-cloud-rds-tf-module`, set `database_name` and `allowed_cidr_blocks`.
+- **A target database** that allows inbound 5432 from `subnet_ids`, with the target database already created. With `core-cloud-rds-tf-module`, set `database_name` and `allowed_cidr_blocks`.
 - **A customer managed KMS key.** Use `core-cloud-kms-tf-module` if you do not have one.
 - **Two Secrets Manager secrets**, one for the source and one for the target, each with `host`, `port`, `username` and `password`. RDS-managed master user secrets cannot be used, because they do not include `host` and `port`.
 
