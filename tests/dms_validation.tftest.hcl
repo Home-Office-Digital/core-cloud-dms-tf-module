@@ -111,3 +111,13 @@ run "requires_min_capacity_not_above_max" {
 
   expect_failures = [aws_dms_replication_config.this]
 }
+
+run "rejects_wildcard_characters_in_schema_names" {
+  command = plan
+
+  variables {
+    include_schemas = ["app_core"]
+  }
+
+  expect_failures = [var.include_schemas]
+}

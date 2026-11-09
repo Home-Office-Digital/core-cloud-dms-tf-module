@@ -79,7 +79,7 @@ aws dms describe-replication-table-statistics \
 The replication uses fixed settings that suit a one-off migration:
 
 - **Full LOB mode**, to avoid truncation. Target LOB columns (such as `bytea` and `text`) must temporarily allow `NULL` during the load. Restore and validate any removed `NOT NULL` constraints after loading.
-- **Truncate before load**, so a re-run does not duplicate rows and a schema you created ahead of time (for example with Flyway) is kept
+- **Truncate before load**, so a re-run does not duplicate rows and a schema you created ahead of time (for example with Flyway) is kept. PostgreSQL cannot truncate a table that a foreign key references, so drop foreign keys on the target before the load and recreate them afterwards.
 - **CloudWatch logging**
 - **Row-level validation**, so you can check completeness with `aws dms describe-replication-table-statistics`
 
@@ -114,7 +114,7 @@ AWS DMS looks up `dms-vpc-role` and `dms-cloudwatch-logs-role` by those exact na
 | target_database_name | Database to migrate into. Must already exist | `string` | n/a | yes |
 | source_secret_arn | Secret with the source `host`, `port`, `username` and `password` | `string` | n/a | yes |
 | target_secret_arn | Secret with the target `host`, `port`, `username` and `password` | `string` | n/a | yes |
-| include_schemas | Schemas to migrate, every table included | `list(string)` | n/a | yes |
+| include_schemas | Schemas to migrate, every table included. Must not contain `%` or `_` | `list(string)` | n/a | yes |
 | min_capacity_units | Minimum DMS capacity units (1 DCU = 2 GB) | `number` | `1` | no |
 | max_capacity_units | Maximum DMS capacity units (1 DCU = 2 GB) | `number` | `4` | no |
 | create_dms_service_roles | Create `dms-vpc-role` and `dms-cloudwatch-logs-role` | `bool` | `true` | no |

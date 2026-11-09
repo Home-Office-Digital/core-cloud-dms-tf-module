@@ -108,13 +108,18 @@ variable "target_secret_arn" {
 }
 
 variable "include_schemas" {
-  description = "Schemas to migrate. Every table in each schema is included."
+  description = "Schemas to migrate. Every table in each schema is included. Names must not contain % or _, which DMS treats as wildcards."
   type        = list(string)
   nullable    = false
 
   validation {
     condition     = length(var.include_schemas) > 0
     error_message = "include_schemas must contain at least one schema."
+  }
+
+  validation {
+    condition     = alltrue([for s in var.include_schemas : !strcontains(s, "%") && !strcontains(s, "_")])
+    error_message = "include_schemas must not contain % or _. DMS treats them as wildcards and cannot escape them for PostgreSQL, so other schemas could be selected and truncated."
   }
 }
 
