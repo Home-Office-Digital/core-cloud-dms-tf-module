@@ -4,8 +4,8 @@ variable "name" {
   nullable    = false
 
   validation {
-    condition     = can(regex("^[a-z][a-z0-9-]{1,40}[a-z0-9]$", var.name))
-    error_message = "name must be 3-42 characters of lowercase letters, numbers and hyphens, starting with a letter and not ending with a hyphen."
+    condition     = can(regex("^[a-z][a-z0-9-]{1,40}[a-z0-9]$", var.name)) && !strcontains(var.name, "--")
+    error_message = "name must be 3-42 characters of lowercase letters, numbers and hyphens, starting with a letter, not ending with a hyphen and not containing consecutive hyphens."
   }
 }
 
@@ -60,8 +60,8 @@ variable "source_cidr_blocks" {
   nullable    = false
 
   validation {
-    condition     = length(var.source_cidr_blocks) > 0 && alltrue([for c in var.source_cidr_blocks : can(cidrhost(c, 0)) && c != "0.0.0.0/0"])
-    error_message = "source_cidr_blocks must contain at least one valid CIDR block and must not include 0.0.0.0/0."
+    condition     = length(var.source_cidr_blocks) > 0 && alltrue([for c in var.source_cidr_blocks : can(cidrnetmask(c)) && try(cidrnetmask(c), "") != "0.0.0.0"])
+    error_message = "source_cidr_blocks must contain at least one valid IPv4 CIDR block and must not include a /0 network."
   }
 }
 
@@ -78,8 +78,8 @@ variable "aws_service_cidr_blocks" {
   nullable    = false
 
   validation {
-    condition     = length(var.aws_service_cidr_blocks) > 0 && alltrue([for c in var.aws_service_cidr_blocks : can(cidrhost(c, 0)) && c != "0.0.0.0/0"])
-    error_message = "aws_service_cidr_blocks must contain at least one valid CIDR block and must not include 0.0.0.0/0."
+    condition     = length(var.aws_service_cidr_blocks) > 0 && alltrue([for c in var.aws_service_cidr_blocks : can(cidrnetmask(c)) && try(cidrnetmask(c), "") != "0.0.0.0"])
+    error_message = "aws_service_cidr_blocks must contain at least one valid IPv4 CIDR block and must not include a /0 network."
   }
 }
 

@@ -78,7 +78,7 @@ aws dms describe-replication-table-statistics \
 
 The replication uses fixed settings that suit a one-off migration:
 
-- **Full LOB mode**, so `bytea` and `text` values are never truncated
+- **Full LOB mode**, to avoid truncation. Target LOB columns (such as `bytea` and `text`) must temporarily allow `NULL` during the load. Restore and validate any removed `NOT NULL` constraints after loading.
 - **Truncate before load**, so a re-run does not duplicate rows and a schema you created ahead of time (for example with Flyway) is kept
 - **CloudWatch logging**
 - **Row-level validation**, so you can check completeness with `aws dms describe-replication-table-statistics`
