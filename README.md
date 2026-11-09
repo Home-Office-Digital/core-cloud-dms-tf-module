@@ -17,6 +17,8 @@ This module includes the following checks and scans: Terraform validate, Terrafo
 
 ## Before you start
 
+Only PostgreSQL endpoints are supported in this release.
+
 You need:
 
 - **Network access to the source.** The source database must allow inbound 5432 from `subnet_ids`. For ACP RDS, ask ACP to add the subnet CIDRs to the RDS security group.
