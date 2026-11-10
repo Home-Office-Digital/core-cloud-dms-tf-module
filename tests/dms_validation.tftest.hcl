@@ -1,4 +1,10 @@
 mock_provider "aws" {
+  mock_data "aws_caller_identity" {
+    defaults = {
+      account_id = "111111111111"
+    }
+  }
+
   mock_data "aws_iam_policy_document" {
     defaults = {
       json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
@@ -17,6 +23,7 @@ variables {
   target_database_name     = "systemregister"
   source_secret_arn        = "arn:aws:secretsmanager:eu-west-2:111111111111:secret:dms-source-AbCdEf"
   target_secret_arn        = "arn:aws:secretsmanager:eu-west-2:111111111111:secret:dms-target-GhIjKl"
+  ca_certificate_pem       = "-----BEGIN CERTIFICATE-----\nMIIBtest\n-----END CERTIFICATE-----\n"
   include_schemas          = ["eventstore"]
 
   tags = {
@@ -130,4 +137,14 @@ run "rejects_reserved_sg_prefix" {
   }
 
   expect_failures = [var.name]
+}
+
+run "rejects_a_non_pem_certificate" {
+  command = plan
+
+  variables {
+    ca_certificate_pem = "not a certificate"
+  }
+
+  expect_failures = [var.ca_certificate_pem]
 }

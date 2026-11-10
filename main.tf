@@ -1,5 +1,7 @@
 data "aws_region" "current" {}
 
+data "aws_caller_identity" "current" {}
+
 data "aws_iam_policy_document" "dms_assume_role" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -7,6 +9,13 @@ data "aws_iam_policy_document" "dms_assume_role" {
     principals {
       type        = "Service"
       identifiers = ["dms.amazonaws.com", "dms.${data.aws_region.current.region}.amazonaws.com"]
+    }
+
+    # Confused deputy protection: only DMS acting for this account.
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
     }
   }
 }
@@ -133,12 +142,20 @@ resource "aws_dms_replication_subnet_group" "this" {
   depends_on = [aws_iam_role_policy_attachment.dms_vpc]
 }
 
+resource "aws_dms_certificate" "ca" {
+  certificate_id  = "${var.name}-ca"
+  certificate_pem = var.ca_certificate_pem
+
+  tags = merge(local.tags, { Name = "${var.name}-ca" })
+}
+
 resource "aws_dms_endpoint" "source" {
   endpoint_id                     = "${var.name}-source"
   endpoint_type                   = "source"
   engine_name                     = "postgres"
   database_name                   = var.source_database_name
-  ssl_mode                        = "require"
+  ssl_mode                        = "verify-full"
+  certificate_arn                 = aws_dms_certificate.ca.certificate_arn
   kms_key_arn                     = var.kms_key_arn
   secrets_manager_arn             = var.source_secret_arn
   secrets_manager_access_role_arn = aws_iam_role.secrets_access.arn
@@ -153,7 +170,8 @@ resource "aws_dms_endpoint" "target" {
   endpoint_type                   = "target"
   engine_name                     = "postgres"
   database_name                   = var.target_database_name
-  ssl_mode                        = "require"
+  ssl_mode                        = "verify-full"
+  certificate_arn                 = aws_dms_certificate.ca.certificate_arn
   kms_key_arn                     = var.kms_key_arn
   secrets_manager_arn             = var.target_secret_arn
   secrets_manager_access_role_arn = aws_iam_role.secrets_access.arn

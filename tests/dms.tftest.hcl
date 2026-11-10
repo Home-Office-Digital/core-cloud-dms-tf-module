@@ -1,4 +1,10 @@
 mock_provider "aws" {
+  mock_data "aws_caller_identity" {
+    defaults = {
+      account_id = "111111111111"
+    }
+  }
+
   mock_data "aws_iam_policy_document" {
     defaults = {
       json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
@@ -17,6 +23,7 @@ variables {
   target_database_name     = "systemregister"
   source_secret_arn        = "arn:aws:secretsmanager:eu-west-2:111111111111:secret:dms-source-AbCdEf"
   target_secret_arn        = "arn:aws:secretsmanager:eu-west-2:111111111111:secret:dms-target-GhIjKl"
+  ca_certificate_pem       = "-----BEGIN CERTIFICATE-----\nMIIBtest\n-----END CERTIFICATE-----\n"
   include_schemas          = ["eventstore", "public"]
 
   tags = {
@@ -54,8 +61,13 @@ run "endpoints_are_postgres_with_ssl_cmk_and_secrets" {
   }
 
   assert {
-    condition     = aws_dms_endpoint.source.ssl_mode == "require" && aws_dms_endpoint.target.ssl_mode == "require"
-    error_message = "Expected both endpoints to require SSL."
+    condition     = aws_dms_endpoint.source.ssl_mode == "verify-full" && aws_dms_endpoint.target.ssl_mode == "verify-full"
+    error_message = "Expected both endpoints to use verify-full."
+  }
+
+  assert {
+    condition     = aws_dms_certificate.ca.certificate_pem == var.ca_certificate_pem
+    error_message = "Expected the supplied CA bundle to be imported for the endpoints."
   }
 
   assert {
@@ -190,5 +202,17 @@ run "tags_are_applied" {
   assert {
     condition     = !contains(keys(aws_security_group.this.tags), "source-repo")
     error_message = "Expected optional tags that were not supplied to be left out."
+  }
+}
+
+run "dms_roles_trust_only_this_account" {
+  command = plan
+
+  assert {
+    condition = anytrue([
+      for st in data.aws_iam_policy_document.dms_assume_role.statement :
+      anytrue([for c in st.condition : c.variable == "aws:SourceAccount" && toset(c.values) == toset(["111111111111"])])
+    ])
+    error_message = "Expected the DMS trust policy to be limited to this account with aws:SourceAccount."
   }
 }

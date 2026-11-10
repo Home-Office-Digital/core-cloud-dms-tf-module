@@ -107,6 +107,17 @@ variable "target_secret_arn" {
   nullable    = false
 }
 
+variable "ca_certificate_pem" {
+  description = "PEM bundle of the CA certificates that signed the source and target database certificates. Both endpoints use verify-full against it. For RDS, use the AWS global bundle (global-bundle.pem)."
+  type        = string
+  nullable    = false
+
+  validation {
+    condition     = strcontains(var.ca_certificate_pem, "-----BEGIN CERTIFICATE-----")
+    error_message = "ca_certificate_pem must be a PEM-encoded certificate bundle."
+  }
+}
+
 variable "include_schemas" {
   description = "Schemas to migrate. Every table in each schema is included. Names must not contain % or _, which DMS treats as wildcards."
   type        = list(string)

@@ -9,7 +9,7 @@ This module includes the following checks and scans: Terraform validate, Terrafo
 ## What it creates
 
 - A DMS Serverless full-load replication, encrypted with your KMS key, that does not start on apply
-- Source and target endpoints, using Secrets Manager credentials, required SSL and your KMS key
+- Source and target endpoints, using Secrets Manager credentials, SSL with full certificate and hostname verification (`verify-full`) and your KMS key
 - A security group allowing DMS outbound only to the source, the target and the Secrets Manager and KMS VPC endpoints
 - An IAM role that lets DMS read the two endpoint secrets
 - The account-level `dms-vpc-role` and `dms-cloudwatch-logs-role`, unless you turn them off
@@ -24,8 +24,9 @@ You need:
 - **Network access to the source.** The source database must allow inbound 5432 from `subnet_ids`. For ACP RDS, ask ACP to add the subnet CIDRs to the RDS security group.
 - **A target database** that allows inbound 5432 from `subnet_ids`, with the target database already created. With `core-cloud-rds-tf-module`, set `database_name` and `allowed_cidr_blocks`.
 - **A customer managed KMS key.** Use `core-cloud-kms-tf-module` if you do not have one.
+- **The CA bundle** that signed both database certificates, as PEM. For RDS, download the AWS [global bundle](https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem) and pass it with `file()`.
 - **Two Secrets Manager secrets**, one for the source and one for the target, each with `host`, `port`, `username` and `password`. RDS-managed master user secrets cannot be used, because they do not include `host` and `port`.
-- **A primary key or unique index** on every source table with LOB columns (such as `bytea` and `text`). Full LOB mode needs one, even for a full load.
+- **A primary key or unique index** on every source table. Full LOB mode needs one for tables with LOB columns (such as `bytea` and `text`), and validation skips any table without one.
 - **No partitioned tables** in the selected schemas. Selecting a whole schema includes partition parents and their child partitions, which duplicates rows on the target.
 
 ## Usage
@@ -46,6 +47,7 @@ module "systems_register_dms" {
   target_database_name = "systemregister"
   source_secret_arn    = aws_secretsmanager_secret.dms_source.arn
   target_secret_arn    = aws_secretsmanager_secret.dms_target.arn
+  ca_certificate_pem   = file("${path.module}/global-bundle.pem")
   include_schemas      = ["eventstore", "public"]
 
   tags = {
@@ -87,7 +89,7 @@ aws dms describe-replication-table-statistics \
 The replication uses fixed settings that suit a one-off migration:
 
 - **Full LOB mode**, to avoid truncation. Target LOB columns (such as `bytea` and `text`) must temporarily allow `NULL` during the load. Restore and validate any removed `NOT NULL` constraints after loading.
-- **Truncate before load**, so a re-run does not duplicate rows and a schema you created ahead of time (for example with Flyway) is kept. PostgreSQL cannot truncate a table that a foreign key references, so drop foreign keys on the target before the load and recreate them afterwards.
+- **Truncate before load**, so a re-run does not duplicate rows and a schema you created ahead of time (for example with Flyway) is kept. PostgreSQL cannot truncate a table that a foreign key references, so drop foreign keys on the target before the load and recreate them afterwards. Disable target triggers too, or they fire on every loaded row and can change the data.
 - **CloudWatch logging**
 - **Row-level validation**, so you can check completeness with `aws dms describe-replication-table-statistics`
 
@@ -122,6 +124,7 @@ AWS DMS looks up `dms-vpc-role` and `dms-cloudwatch-logs-role` by those exact na
 | target_database_name | Database to migrate into. Must already exist | `string` | n/a | yes |
 | source_secret_arn | Secret with the source `host`, `port`, `username` and `password` | `string` | n/a | yes |
 | target_secret_arn | Secret with the target `host`, `port`, `username` and `password` | `string` | n/a | yes |
+| ca_certificate_pem | PEM CA bundle for `verify-full` on both endpoints | `string` | n/a | yes |
 | include_schemas | Schemas to migrate, every table included. Must not contain `%` or `_` | `list(string)` | n/a | yes |
 | min_capacity_units | Minimum DMS capacity units (1 DCU = 2 GB) | `number` | `1` | no |
 | max_capacity_units | Maximum DMS capacity units (1 DCU = 2 GB) | `number` | `4` | no |
