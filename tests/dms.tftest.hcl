@@ -216,3 +216,21 @@ run "dms_roles_trust_only_this_account" {
     error_message = "Expected the DMS trust policy to be limited to this account with aws:SourceAccount."
   }
 }
+
+run "permissions_boundary_is_set_on_every_role" {
+  command = plan
+
+  variables {
+    permissions_boundary_arn = "arn:aws:iam::111111111111:policy/tenant-boundary"
+  }
+
+  assert {
+    condition = alltrue([
+      aws_iam_role.secrets_access.permissions_boundary == var.permissions_boundary_arn,
+      aws_iam_role.dms_vpc[0].permissions_boundary == var.permissions_boundary_arn,
+      aws_iam_role.dms_cloudwatch_logs[0].permissions_boundary == var.permissions_boundary_arn,
+    ])
+    error_message = "Expected the permissions boundary on all three roles."
+  }
+}
+

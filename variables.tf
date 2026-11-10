@@ -158,6 +158,17 @@ variable "max_capacity_units" {
   }
 }
 
+variable "permissions_boundary_arn" {
+  description = "ARN of a permissions boundary to set on every IAM role the module creates. Required in accounts that deny creating roles without one, such as Core Cloud tenant accounts."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.permissions_boundary_arn == null || can(regex("^arn:aws:iam::[0-9]{12}:policy/", var.permissions_boundary_arn))
+    error_message = "permissions_boundary_arn must be an IAM policy ARN (arn:aws:iam::<account>:policy/<name>)."
+  }
+}
+
 variable "create_dms_service_roles" {
   description = "Whether to create dms-vpc-role and dms-cloudwatch-logs-role. AWS requires these exact names, so only one stack per account can own them. Set to false if they already exist in the account."
   type        = bool

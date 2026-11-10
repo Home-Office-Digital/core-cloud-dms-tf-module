@@ -66,9 +66,10 @@ resource "aws_vpc_security_group_egress_rule" "to_aws_services" {
 }
 
 resource "aws_iam_role" "secrets_access" {
-  name               = "${var.name}-dms-secrets"
-  description        = "Allows DMS to read the ${var.name} endpoint secrets"
-  assume_role_policy = data.aws_iam_policy_document.dms_assume_role.json
+  name                 = "${var.name}-dms-secrets"
+  description          = "Allows DMS to read the ${var.name} endpoint secrets"
+  assume_role_policy   = data.aws_iam_policy_document.dms_assume_role.json
+  permissions_boundary = var.permissions_boundary_arn
 
   tags = local.tags
 }
@@ -100,9 +101,10 @@ resource "aws_iam_role_policy" "secrets_access" {
 resource "aws_iam_role" "dms_vpc" {
   count = var.create_dms_service_roles ? 1 : 0
 
-  name               = "dms-vpc-role"
-  description        = "Allows DMS to manage VPC resources for replication"
-  assume_role_policy = data.aws_iam_policy_document.dms_assume_role.json
+  name                 = "dms-vpc-role"
+  description          = "Allows DMS to manage VPC resources for replication"
+  assume_role_policy   = data.aws_iam_policy_document.dms_assume_role.json
+  permissions_boundary = var.permissions_boundary_arn
 
   tags = local.tags
 }
@@ -117,9 +119,10 @@ resource "aws_iam_role_policy_attachment" "dms_vpc" {
 resource "aws_iam_role" "dms_cloudwatch_logs" {
   count = var.create_dms_service_roles ? 1 : 0
 
-  name               = "dms-cloudwatch-logs-role"
-  description        = "Allows DMS to publish replication logs to CloudWatch Logs"
-  assume_role_policy = data.aws_iam_policy_document.dms_assume_role.json
+  name                 = "dms-cloudwatch-logs-role"
+  description          = "Allows DMS to publish replication logs to CloudWatch Logs"
+  assume_role_policy   = data.aws_iam_policy_document.dms_assume_role.json
+  permissions_boundary = var.permissions_boundary_arn
 
   tags = local.tags
 }

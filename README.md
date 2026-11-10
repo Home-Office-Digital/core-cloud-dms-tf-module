@@ -128,6 +128,7 @@ AWS DMS looks up `dms-vpc-role` and `dms-cloudwatch-logs-role` by those exact na
 | include_schemas | Schemas to migrate, every table included. Must not contain `%` or `_` | `list(string)` | n/a | yes |
 | min_capacity_units | Minimum DMS capacity units (1 DCU = 2 GB) | `number` | `1` | no |
 | max_capacity_units | Maximum DMS capacity units (1 DCU = 2 GB) | `number` | `4` | no |
+| permissions_boundary_arn | Permissions boundary for every role the module creates. Required in Core Cloud tenant accounts | `string` | `null` | no |
 | create_dms_service_roles | Create `dms-vpc-role` and `dms-cloudwatch-logs-role` | `bool` | `true` | no |
 
 ## Outputs

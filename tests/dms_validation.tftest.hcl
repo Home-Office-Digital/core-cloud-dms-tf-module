@@ -148,3 +148,14 @@ run "rejects_a_non_pem_certificate" {
 
   expect_failures = [var.ca_certificate_pem]
 }
+
+run "rejects_a_non_policy_boundary_arn" {
+  command = plan
+
+  variables {
+    permissions_boundary_arn = "tenant-boundary"
+  }
+
+  expect_failures = [var.permissions_boundary_arn]
+}
+

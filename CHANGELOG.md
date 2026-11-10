@@ -8,6 +8,7 @@ Semantic versioning (https://semver.org/) must be adhered to for all Core Cloud 
 - One-off full-load database migration using DMS Serverless.
 - Source and target endpoints using Secrets Manager credentials, `verify-full` SSL against a supplied CA bundle, and a customer managed KMS key.
 - DMS role trust limited to the deploying account (`aws:SourceAccount`).
+- Optional `permissions_boundary_arn` for the module's IAM roles.
 - Security group with egress scoped to the source, the target and the AWS service VPC endpoints.
 - IAM role for DMS to read the endpoint secrets, and optional account-level `dms-vpc-role` and `dms-cloudwatch-logs-role`.
 - Table mappings generated from `include_schemas`.
