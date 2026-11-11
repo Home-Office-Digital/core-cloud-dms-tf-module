@@ -126,6 +126,7 @@ AWS DMS looks up `dms-vpc-role` and `dms-cloudwatch-logs-role` by those exact na
 | target_secret_arn | Secret with the target `host`, `port`, `username` and `password` | `string` | n/a | yes |
 | ca_certificate_pem | PEM CA bundle for `verify-full` on both endpoints | `string` | n/a | yes |
 | include_schemas | Schemas to migrate, every table included. Must not contain `%` or `_` | `list(string)` | n/a | yes |
+| source_ssl_mode | `verify-full`, or `require` when the source certificate cannot be verified (for example an expired RDS CA). The target always uses `verify-full` | `string` | `"verify-full"` | no |
 | min_capacity_units | Minimum DMS capacity units (1 DCU = 2 GB) | `number` | `1` | no |
 | max_capacity_units | Maximum DMS capacity units (1 DCU = 2 GB) | `number` | `4` | no |
 | permissions_boundary_arn | Permissions boundary for every role the module creates. Required in Core Cloud tenant accounts | `string` | `null` | no |

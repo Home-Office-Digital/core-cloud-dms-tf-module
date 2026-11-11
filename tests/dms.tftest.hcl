@@ -81,6 +81,24 @@ run "endpoints_are_postgres_with_ssl_cmk_and_secrets" {
   }
 }
 
+run "source_can_require_ssl_without_verification" {
+  command = plan
+
+  variables {
+    source_ssl_mode = "require"
+  }
+
+  assert {
+    condition     = aws_dms_endpoint.source.ssl_mode == "require"
+    error_message = "Expected the source to require SSL."
+  }
+
+  assert {
+    condition     = aws_dms_endpoint.target.ssl_mode == "verify-full"
+    error_message = "Expected the target to keep verify-full."
+  }
+}
+
 run "serverless_compute_is_encrypted_and_sized" {
   command = plan
 

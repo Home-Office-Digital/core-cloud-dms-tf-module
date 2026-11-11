@@ -118,6 +118,18 @@ variable "ca_certificate_pem" {
   }
 }
 
+variable "source_ssl_mode" {
+  description = "SSL mode for the source endpoint. Use require only when the source certificate cannot be verified, for example an expired RDS CA. The connection is still encrypted but the server is not authenticated. The target always uses verify-full."
+  type        = string
+  default     = "verify-full"
+  nullable    = false
+
+  validation {
+    condition     = contains(["verify-full", "require"], var.source_ssl_mode)
+    error_message = "source_ssl_mode must be verify-full or require."
+  }
+}
+
 variable "include_schemas" {
   description = "Schemas to migrate. Every table in each schema is included. Names must not contain % or _, which DMS treats as wildcards."
   type        = list(string)

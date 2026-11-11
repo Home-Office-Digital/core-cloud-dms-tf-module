@@ -157,7 +157,7 @@ resource "aws_dms_endpoint" "source" {
   endpoint_type                   = "source"
   engine_name                     = "postgres"
   database_name                   = var.source_database_name
-  ssl_mode                        = "verify-full"
+  ssl_mode                        = var.source_ssl_mode
   certificate_arn                 = aws_dms_certificate.ca.certificate_arn
   kms_key_arn                     = var.kms_key_arn
   secrets_manager_arn             = var.source_secret_arn

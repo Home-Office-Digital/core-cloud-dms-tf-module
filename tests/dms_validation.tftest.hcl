@@ -159,3 +159,12 @@ run "rejects_a_non_policy_boundary_arn" {
   expect_failures = [var.permissions_boundary_arn]
 }
 
+run "rejects_unverified_ssl_modes" {
+  command = plan
+
+  variables {
+    source_ssl_mode = "none"
+  }
+
+  expect_failures = [var.source_ssl_mode]
+}
