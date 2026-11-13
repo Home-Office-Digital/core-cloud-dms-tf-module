@@ -27,7 +27,7 @@ variable "tags" {
 }
 
 variable "kms_key_arn" {
-  description = "ARN of a customer managed KMS key used to encrypt the endpoints and replication instance storage. DMS is also allowed to decrypt the endpoint secrets with it."
+  description = "ARN of the customer managed KMS key that encrypts the two endpoint secrets. DMS is allowed to decrypt the secrets with it. The endpoints and serverless compute use the AWS managed aws/dms key."
   type        = string
   nullable    = false
 

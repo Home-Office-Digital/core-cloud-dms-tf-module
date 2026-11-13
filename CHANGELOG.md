@@ -3,7 +3,11 @@
 All notable changes to this project will be documented in this file.
 Semantic versioning (https://semver.org/) must be adhered to for all Core Cloud modules.
 
-### [0.2.0] Unreleased
+### [0.3.0] Unreleased
+- Endpoints and serverless compute use the AWS managed `aws/dms` key. With a customer managed key, provisioning failed with `KMSKeyNotAccessibleFault`, because the DMS Serverless service-linked role's session policy does not allow it. `kms_key_arn` now only covers decrypting the endpoint secrets.
+- Upgrading from 0.2.0 replaces the endpoints and the replication.
+
+### [0.2.0] 2026-11-10
 
 - One-off full-load database migration using DMS Serverless.
 - Source and target endpoints using Secrets Manager credentials, `verify-full` SSL against a supplied CA bundle, and a customer managed KMS key.

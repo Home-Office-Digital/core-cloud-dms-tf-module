@@ -8,8 +8,8 @@ This module includes the following checks and scans: Terraform validate, Terrafo
 
 ## What it creates
 
-- A DMS Serverless full-load replication, encrypted with your KMS key, that does not start on apply
-- Source and target endpoints, using Secrets Manager credentials, SSL with full certificate and hostname verification (`verify-full`) and your KMS key
+- A DMS Serverless full-load replication that does not start on apply
+- Source and target endpoints, using Secrets Manager credentials and SSL with full certificate and hostname verification (`verify-full`)
 - A security group allowing DMS outbound only to the source, the target and the Secrets Manager and KMS VPC endpoints
 - An IAM role that lets DMS read the two endpoint secrets
 - The account-level `dms-vpc-role` and `dms-cloudwatch-logs-role`, unless you turn them off
@@ -23,7 +23,7 @@ You need:
 
 - **Network access to the source.** The source database must allow inbound 5432 from `subnet_ids`. For ACP RDS, ask ACP to add the subnet CIDRs to the RDS security group.
 - **A target database** that allows inbound 5432 from `subnet_ids`, with the target database already created. With `core-cloud-rds-tf-module`, set `database_name` and `allowed_cidr_blocks`.
-- **A customer managed KMS key.** Use `core-cloud-kms-tf-module` if you do not have one.
+- **A customer managed KMS key** for the two secrets. Use `core-cloud-kms-tf-module` if you do not have one.
 - **The CA bundle** that signed both database certificates, as PEM. For RDS, download the AWS [global bundle](https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem) and pass it with `file()`.
 - **Two Secrets Manager secrets**, one for the source and one for the target, each with `host`, `port`, `username` and `password`. RDS-managed master user secrets cannot be used, because they do not include `host` and `port`.
 - **A primary key or unique index** on every source table. Full LOB mode needs one for tables with LOB columns (such as `bytea` and `text`), and validation skips any table without one.
@@ -93,6 +93,10 @@ The replication uses fixed settings that suit a one-off migration:
 - **CloudWatch logging**
 - **Row-level validation**, so you can check completeness with `aws dms describe-replication-table-statistics`
 
+## Encryption
+
+`kms_key_arn` encrypts the two endpoint secrets. The endpoints and the serverless compute use the AWS managed `aws/dms` key. DMS Serverless provisions through `AWSServiceRoleForDMSServerless`, whose session policy does not allow customer managed keys, so adding that role to the key policy does not help. The databases themselves keep their own encryption.
+
 ## What DMS does not migrate
 
 DMS moves table data. It does not migrate users, roles, grants, sequence values, or most other objects such as views, functions and triggers. Create the schema on the target first (for example by running your application's migrations), then use DMS for the data. Reset sequences after the load, for example with `setval`.
@@ -114,7 +118,7 @@ AWS DMS looks up `dms-vpc-role` and `dms-cloudwatch-logs-role` by those exact na
 |------|-------------|------|---------|:--------:|
 | name | Name of the migration, used to prefix every resource | `string` | n/a | yes |
 | tags | Core Cloud mandatory tags | `object` | n/a | yes |
-| kms_key_arn | Customer managed KMS key for the endpoints, replication and secret decryption | `string` | n/a | yes |
+| kms_key_arn | Customer managed KMS key that encrypts the endpoint secrets | `string` | n/a | yes |
 | vpc_id | VPC that DMS runs in | `string` | n/a | yes |
 | subnet_ids | Private subnets for DMS, at least two Availability Zones | `list(string)` | n/a | yes |
 | source_cidr_blocks | CIDR blocks of the source database | `list(string)` | n/a | yes |

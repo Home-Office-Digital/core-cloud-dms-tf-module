@@ -152,6 +152,9 @@ resource "aws_dms_certificate" "ca" {
   tags = merge(local.tags, { Name = "${var.name}-ca" })
 }
 
+# Endpoints and serverless compute use the AWS managed aws/dms key. DMS
+# Serverless provisions through a service-linked role whose session policy
+# denies customer managed keys, even when the key policy allows that role.
 resource "aws_dms_endpoint" "source" {
   endpoint_id                     = "${var.name}-source"
   endpoint_type                   = "source"
@@ -159,7 +162,6 @@ resource "aws_dms_endpoint" "source" {
   database_name                   = var.source_database_name
   ssl_mode                        = "verify-full"
   certificate_arn                 = aws_dms_certificate.ca.certificate_arn
-  kms_key_arn                     = var.kms_key_arn
   secrets_manager_arn             = var.source_secret_arn
   secrets_manager_access_role_arn = aws_iam_role.secrets_access.arn
 
@@ -175,7 +177,6 @@ resource "aws_dms_endpoint" "target" {
   database_name                   = var.target_database_name
   ssl_mode                        = "verify-full"
   certificate_arn                 = aws_dms_certificate.ca.certificate_arn
-  kms_key_arn                     = var.kms_key_arn
   secrets_manager_arn             = var.target_secret_arn
   secrets_manager_access_role_arn = aws_iam_role.secrets_access.arn
 
@@ -199,7 +200,6 @@ resource "aws_dms_replication_config" "this" {
     min_capacity_units          = var.min_capacity_units
     max_capacity_units          = var.max_capacity_units
     multi_az                    = false
-    kms_key_id                  = var.kms_key_arn
   }
 
   tags = merge(local.tags, { Name = var.name })

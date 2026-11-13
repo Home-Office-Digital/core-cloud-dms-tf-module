@@ -71,23 +71,13 @@ run "endpoints_are_postgres_with_ssl_cmk_and_secrets" {
   }
 
   assert {
-    condition     = aws_dms_endpoint.source.kms_key_arn == var.kms_key_arn && aws_dms_endpoint.target.kms_key_arn == var.kms_key_arn
-    error_message = "Expected both endpoints to use the supplied CMK."
-  }
-
-  assert {
     condition     = aws_dms_endpoint.source.secrets_manager_arn == var.source_secret_arn && aws_dms_endpoint.target.secrets_manager_arn == var.target_secret_arn
     error_message = "Expected endpoints to read credentials from Secrets Manager."
   }
 }
 
-run "serverless_compute_is_encrypted_and_sized" {
+run "serverless_compute_is_sized" {
   command = plan
-
-  assert {
-    condition     = aws_dms_replication_config.this.compute_config[0].kms_key_id == var.kms_key_arn
-    error_message = "Expected serverless compute to use the supplied CMK."
-  }
 
   assert {
     condition     = aws_dms_replication_config.this.compute_config[0].min_capacity_units == 1 && aws_dms_replication_config.this.compute_config[0].max_capacity_units == 4
