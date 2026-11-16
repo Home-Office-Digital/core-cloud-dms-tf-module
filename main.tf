@@ -184,34 +184,36 @@ resource "aws_dms_endpoint" "target" {
   depends_on = [aws_iam_role_policy.secrets_access]
 }
 
-resource "aws_dms_replication_config" "this" {
-  replication_config_identifier = var.name
-  replication_type              = "full-load"
-  source_endpoint_arn           = aws_dms_endpoint.source.endpoint_arn
-  target_endpoint_arn           = aws_dms_endpoint.target.endpoint_arn
-  table_mappings                = local.table_mappings
-  replication_settings          = local.replication_settings
-  start_replication             = false
 
-  compute_config {
-    replication_subnet_group_id = aws_dms_replication_subnet_group.this.replication_subnet_group_id
-    vpc_security_group_ids      = [aws_security_group.this.id]
-    min_capacity_units          = var.min_capacity_units
-    max_capacity_units          = var.max_capacity_units
-    multi_az                    = false
-    kms_key_id                  = var.kms_key_arn
-  }
+# Provisioned rather than serverless: DMS Serverless provisions through a
+# service-linked role that cannot use a customer managed key.
+resource "aws_dms_replication_instance" "this" {
+  replication_instance_id     = var.name
+  replication_instance_class  = var.instance_class
+  allocated_storage           = var.allocated_storage
+  kms_key_arn                 = var.kms_key_arn
+  replication_subnet_group_id = aws_dms_replication_subnet_group.this.replication_subnet_group_id
+  vpc_security_group_ids      = [aws_security_group.this.id]
+  publicly_accessible         = false
+  multi_az                    = false
+  auto_minor_version_upgrade  = true
+
+  tags = merge(local.tags, { Name = var.name })
+
+  depends_on = [aws_iam_role_policy_attachment.dms_vpc]
+}
+
+resource "aws_dms_replication_task" "this" {
+  replication_task_id       = var.name
+  migration_type            = "full-load"
+  replication_instance_arn  = aws_dms_replication_instance.this.replication_instance_arn
+  source_endpoint_arn       = aws_dms_endpoint.source.endpoint_arn
+  target_endpoint_arn       = aws_dms_endpoint.target.endpoint_arn
+  table_mappings            = local.table_mappings
+  replication_task_settings = local.replication_settings
+  start_replication_task    = false
 
   tags = merge(local.tags, { Name = var.name })
 
   depends_on = [aws_iam_role_policy_attachment.dms_cloudwatch_logs]
-
-  lifecycle {
-    ignore_changes = [start_replication]
-
-    precondition {
-      condition     = var.min_capacity_units <= var.max_capacity_units
-      error_message = "min_capacity_units must not be greater than max_capacity_units."
-    }
-  }
 }

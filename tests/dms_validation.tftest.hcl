@@ -98,27 +98,6 @@ run "requires_a_schema" {
   expect_failures = [var.include_schemas]
 }
 
-run "rejects_invalid_capacity" {
-  command = plan
-
-  variables {
-    max_capacity_units = 3
-  }
-
-  expect_failures = [var.max_capacity_units]
-}
-
-run "requires_min_capacity_not_above_max" {
-  command = plan
-
-  variables {
-    min_capacity_units = 8
-    max_capacity_units = 4
-  }
-
-  expect_failures = [aws_dms_replication_config.this]
-}
-
 run "rejects_wildcard_characters_in_schema_names" {
   command = plan
 
@@ -159,3 +138,23 @@ run "rejects_a_non_policy_boundary_arn" {
   expect_failures = [var.permissions_boundary_arn]
 }
 
+
+run "rejects_an_invalid_instance_class" {
+  command = plan
+
+  variables {
+    instance_class = "t3.medium"
+  }
+
+  expect_failures = [var.instance_class]
+}
+
+run "rejects_too_little_storage" {
+  command = plan
+
+  variables {
+    allocated_storage = 2
+  }
+
+  expect_failures = [var.allocated_storage]
+}
