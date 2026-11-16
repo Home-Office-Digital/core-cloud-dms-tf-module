@@ -27,7 +27,7 @@ variable "tags" {
 }
 
 variable "kms_key_arn" {
-  description = "ARN of a customer managed KMS key used to encrypt the endpoints and replication instance storage. DMS is also allowed to decrypt the endpoint secrets with it."
+  description = "ARN of a customer managed KMS key used to encrypt the endpoints and the replication instance storage. Both endpoint secrets must be encrypted with this key, because DMS is only allowed to decrypt them with it."
   type        = string
   nullable    = false
 
@@ -134,27 +134,27 @@ variable "include_schemas" {
   }
 }
 
-variable "min_capacity_units" {
-  description = "Minimum DMS capacity units (DCUs). 1 DCU is 2 GB of memory."
-  type        = number
-  default     = 1
+variable "instance_class" {
+  description = "DMS replication instance class, for example dms.t3.medium or dms.r6i.large. Size it for the largest table being copied."
+  type        = string
+  default     = "dms.t3.medium"
   nullable    = false
 
   validation {
-    condition     = contains([1, 2, 4, 8, 16, 32, 64, 128, 192, 256, 384], var.min_capacity_units)
-    error_message = "min_capacity_units must be one of 1, 2, 4, 8, 16, 32, 64, 128, 192, 256 or 384."
+    condition     = can(regex("^dms\\.[a-z0-9]+\\.[a-z0-9]+$", var.instance_class))
+    error_message = "instance_class must be a DMS instance class, such as dms.t3.medium."
   }
 }
 
-variable "max_capacity_units" {
-  description = "Maximum DMS capacity units (DCUs). 1 DCU is 2 GB of memory."
+variable "allocated_storage" {
+  description = "Storage in GiB for the replication instance, used for logs and cached changes. Encrypted with kms_key_arn."
   type        = number
-  default     = 4
+  default     = 20
   nullable    = false
 
   validation {
-    condition     = contains([1, 2, 4, 8, 16, 32, 64, 128, 192, 256, 384], var.max_capacity_units)
-    error_message = "max_capacity_units must be one of 1, 2, 4, 8, 16, 32, 64, 128, 192, 256 or 384."
+    condition     = var.allocated_storage >= 5 && var.allocated_storage <= 6144 && floor(var.allocated_storage) == var.allocated_storage
+    error_message = "allocated_storage must be a whole number of GiB between 5 and 6144."
   }
 }
 

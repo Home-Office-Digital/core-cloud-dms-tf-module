@@ -42,12 +42,12 @@ run "replication_is_a_full_load_that_does_not_start_on_apply" {
   command = plan
 
   assert {
-    condition     = aws_dms_replication_config.this.replication_type == "full-load"
+    condition     = aws_dms_replication_task.this.migration_type == "full-load"
     error_message = "Expected a full-load replication."
   }
 
   assert {
-    condition     = aws_dms_replication_config.this.start_replication == false
+    condition     = aws_dms_replication_task.this.start_replication_task == false
     error_message = "Expected the replication not to start on apply."
   }
 }
@@ -81,17 +81,22 @@ run "endpoints_are_postgres_with_ssl_cmk_and_secrets" {
   }
 }
 
-run "serverless_compute_is_encrypted_and_sized" {
+run "replication_instance_is_private_encrypted_and_sized" {
   command = plan
 
   assert {
-    condition     = aws_dms_replication_config.this.compute_config[0].kms_key_id == var.kms_key_arn
-    error_message = "Expected serverless compute to use the supplied CMK."
+    condition     = aws_dms_replication_instance.this.kms_key_arn == var.kms_key_arn
+    error_message = "Expected the replication instance storage to use the supplied CMK."
   }
 
   assert {
-    condition     = aws_dms_replication_config.this.compute_config[0].min_capacity_units == 1 && aws_dms_replication_config.this.compute_config[0].max_capacity_units == 4
-    error_message = "Expected 1-4 DCUs by default."
+    condition     = aws_dms_replication_instance.this.publicly_accessible == false && aws_dms_replication_instance.this.auto_minor_version_upgrade == true
+    error_message = "Expected a private instance with automatic minor upgrades."
+  }
+
+  assert {
+    condition     = aws_dms_replication_instance.this.replication_instance_class == "dms.t3.medium" && aws_dms_replication_instance.this.allocated_storage == 20
+    error_message = "Expected dms.t3.medium with 20 GiB by default."
   }
 }
 
@@ -99,17 +104,17 @@ run "settings_protect_lob_data_and_validate" {
   command = plan
 
   assert {
-    condition     = jsondecode(aws_dms_replication_config.this.replication_settings).TargetMetadata.FullLobMode == true
+    condition     = jsondecode(aws_dms_replication_task.this.replication_task_settings).TargetMetadata.FullLobMode == true
     error_message = "Expected full LOB mode so bytea values are not truncated."
   }
 
   assert {
-    condition     = jsondecode(aws_dms_replication_config.this.replication_settings).FullLoadSettings.TargetTablePrepMode == "TRUNCATE_BEFORE_LOAD"
+    condition     = jsondecode(aws_dms_replication_task.this.replication_task_settings).FullLoadSettings.TargetTablePrepMode == "TRUNCATE_BEFORE_LOAD"
     error_message = "Expected truncate-before-load so a pre-created schema is kept."
   }
 
   assert {
-    condition     = jsondecode(aws_dms_replication_config.this.replication_settings).ValidationSettings.EnableValidation == true
+    condition     = jsondecode(aws_dms_replication_task.this.replication_task_settings).ValidationSettings.EnableValidation == true
     error_message = "Expected data validation to be enabled."
   }
 }
@@ -118,17 +123,17 @@ run "table_mappings_select_every_table_in_each_schema" {
   command = plan
 
   assert {
-    condition     = length(jsondecode(aws_dms_replication_config.this.table_mappings).rules) == 2
+    condition     = length(jsondecode(aws_dms_replication_task.this.table_mappings).rules) == 2
     error_message = "Expected one selection rule per schema."
   }
 
   assert {
-    condition     = jsondecode(aws_dms_replication_config.this.table_mappings).rules[0]["object-locator"]["schema-name"] == "eventstore"
+    condition     = jsondecode(aws_dms_replication_task.this.table_mappings).rules[0]["object-locator"]["schema-name"] == "eventstore"
     error_message = "Expected the first rule to select the eventstore schema."
   }
 
   assert {
-    condition     = jsondecode(aws_dms_replication_config.this.table_mappings).rules[1]["object-locator"]["table-name"] == "%"
+    condition     = jsondecode(aws_dms_replication_task.this.table_mappings).rules[1]["object-locator"]["table-name"] == "%"
     error_message = "Expected every table in the schema to be included."
   }
 }
@@ -195,7 +200,7 @@ run "tags_are_applied" {
   command = plan
 
   assert {
-    condition     = aws_dms_replication_config.this.tags["service-id"] == "dms" && aws_iam_role.secrets_access.tags["cost-centre"] == "CC1001"
+    condition     = aws_dms_replication_task.this.tags["service-id"] == "dms" && aws_iam_role.secrets_access.tags["cost-centre"] == "CC1001"
     error_message = "Expected Core Cloud tags on module resources."
   }
 

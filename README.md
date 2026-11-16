@@ -2,13 +2,14 @@
 
 Use this module to migrate a database into a Core Cloud account, for example from ACP RDS, with AWS Database Migration Service (DMS).
 
-It runs a one-off full load using DMS Serverless. Change data capture (CDC), other engines and provisioned replication instances are not supported yet.
+It runs a one-off full load on a provisioned DMS replication instance. Change data capture (CDC) and other engines are not supported yet.
 
 This module includes the following checks and scans: Terraform validate, Terraform fmt, Terraform test, TFLint, Checkov, SonarQube and semantic versioning (MAJOR.MINOR.PATCH).
 
 ## What it creates
 
-- A DMS Serverless full-load replication, encrypted with your KMS key, that does not start on apply
+- A DMS replication instance, encrypted with your KMS key
+- A full-load replication task that does not start on apply
 - Source and target endpoints, using Secrets Manager credentials, SSL with full certificate and hostname verification (`verify-full`) and your KMS key
 - A security group allowing DMS outbound only to the source, the target and the Secrets Manager and KMS VPC endpoints
 - An IAM role that lets DMS read the two endpoint secrets
@@ -62,26 +63,26 @@ module "systems_register_dms" {
   }
 }
 
-output "replication_config_arn" {
-  value = module.systems_register_dms.replication_config_arn
+output "replication_task_arn" {
+  value = module.systems_register_dms.replication_task_arn
 }
 ```
 
 This is a full load only, so changes made on the source after a table is copied are not migrated. Before you start, stop writes to the source and let open transactions finish. Keep the source read-only until you have validated the target and cut over.
 
-After apply, start the replication. DMS connects to the source, provisions capacity, then loads the data, so expect a wait before rows start to move:
+After apply, start the task:
 
 ```bash
-aws dms start-replication \
-  --replication-config-arn "$(terraform output -raw replication_config_arn)" \
-  --start-replication-type start-replication
+aws dms start-replication-task \
+  --replication-task-arn "$(terraform output -raw replication_task_arn)" \
+  --start-replication-task-type start-replication
 ```
 
 Check progress and row counts with:
 
 ```bash
-aws dms describe-replication-table-statistics \
-  --replication-config-arn "$(terraform output -raw replication_config_arn)"
+aws dms describe-table-statistics \
+  --replication-task-arn "$(terraform output -raw replication_task_arn)"
 ```
 
 ## Replication settings
@@ -91,7 +92,11 @@ The replication uses fixed settings that suit a one-off migration:
 - **Full LOB mode**, to avoid truncation. Target LOB columns (such as `bytea` and `text`) must temporarily allow `NULL` during the load. Restore and validate any removed `NOT NULL` constraints after loading.
 - **Truncate before load**, so a re-run does not duplicate rows and a schema you created ahead of time (for example with Flyway) is kept. PostgreSQL cannot truncate a table that a foreign key references, so drop foreign keys on the target before the load and recreate them afterwards. Disable target triggers too, or they fire on every loaded row and can change the data.
 - **CloudWatch logging**
-- **Row-level validation**, so you can check completeness with `aws dms describe-replication-table-statistics`
+- **Row-level validation**, so you can check completeness with `aws dms describe-table-statistics`
+
+## Why a provisioned instance
+
+AWS documents a customer managed key for DMS Serverless (`ComputeConfig.KmsKeyId`), but in our testing it failed to provision with one. CloudTrail showed `AWSServiceRoleForDMSServerless` denied `kms:DescribeKey` because no session policy allowed it. The role's AWS managed policy, `AWSDMSServerlessServiceRolePolicy`, grants no KMS actions. A session policy also caps what a key policy grants to the role, so adding the role to the key policy did not help. Only AWS can change this. Without a customer managed key it worked, but the endpoints then fail Checkov `CKV_AWS_296`. A provisioned instance worked with the customer managed key on the instance and endpoints.
 
 ## What DMS does not migrate
 
@@ -126,8 +131,8 @@ AWS DMS looks up `dms-vpc-role` and `dms-cloudwatch-logs-role` by those exact na
 | target_secret_arn | Secret with the target `host`, `port`, `username` and `password` | `string` | n/a | yes |
 | ca_certificate_pem | PEM CA bundle for `verify-full` on both endpoints | `string` | n/a | yes |
 | include_schemas | Schemas to migrate, every table included. Must not contain `%` or `_` | `list(string)` | n/a | yes |
-| min_capacity_units | Minimum DMS capacity units (1 DCU = 2 GB) | `number` | `1` | no |
-| max_capacity_units | Maximum DMS capacity units (1 DCU = 2 GB) | `number` | `4` | no |
+| instance_class | DMS replication instance class | `string` | `"dms.t3.medium"` | no |
+| allocated_storage | Replication instance storage in GiB | `number` | `20` | no |
 | permissions_boundary_arn | Permissions boundary for every role the module creates. Required in Core Cloud tenant accounts | `string` | `null` | no |
 | create_dms_service_roles | Create `dms-vpc-role` and `dms-cloudwatch-logs-role` | `bool` | `true` | no |
 
@@ -135,7 +140,7 @@ AWS DMS looks up `dms-vpc-role` and `dms-cloudwatch-logs-role` by those exact na
 
 | Name | Description |
 |------|-------------|
-| replication_config_arn | Serverless replication ARN, used to start it and check progress |
+| replication_task_arn | Replication task ARN, used to start it and check progress |
 | security_group_id | Security group attached to the replication |
 
 ## Terraform tests
