@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 Semantic versioning (https://semver.org/) must be adhered to for all Core Cloud modules.
 
 ### [0.3.0] Unreleased
-- The migration runs on a provisioned replication instance and task instead of DMS Serverless, which cannot use a customer managed key.
+- The migration runs on a provisioned replication instance and task instead of DMS Serverless, which failed to provision with a customer managed key in our testing.
 - `instance_class` (default `dms.t3.medium`) and `allocated_storage` (default 20 GiB) replace `min_capacity_units` and `max_capacity_units`. The `replication_task_arn` output replaces `replication_config_arn`.
 - The instance, endpoints and secrets all use `kms_key_arn`.
 

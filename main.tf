@@ -185,8 +185,7 @@ resource "aws_dms_endpoint" "target" {
 }
 
 
-# Provisioned rather than serverless: DMS Serverless provisions through a
-# service-linked role that cannot use a customer managed key.
+# Provisioned rather than serverless: see "Why a provisioned instance" in the README.
 resource "aws_dms_replication_instance" "this" {
   replication_instance_id     = var.name
   replication_instance_class  = var.instance_class

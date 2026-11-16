@@ -94,9 +94,9 @@ The replication uses fixed settings that suit a one-off migration:
 - **CloudWatch logging**
 - **Row-level validation**, so you can check completeness with `aws dms describe-table-statistics`
 
-## Why not DMS Serverless
+## Why a provisioned instance
 
-DMS Serverless provisions through the `AWSServiceRoleForDMSServerless` service-linked role, whose session policy does not allow customer managed keys. With a customer managed key on the endpoints or compute it fails with `KMSKeyNotAccessibleFault`, and without one the endpoints fail Checkov `CKV_AWS_296`. A provisioned instance is created by the caller, so your key works everywhere.
+AWS documents a customer managed key for DMS Serverless (`ComputeConfig.KmsKeyId`), but in our testing it failed to provision with one. CloudTrail showed `AWSServiceRoleForDMSServerless` denied `kms:DescribeKey` because no session policy allowed it, and adding the role to the key policy did not help. The cause is not yet established. Without a customer managed key it worked, but the endpoints then fail Checkov `CKV_AWS_296`. A provisioned instance worked with the customer managed key on the instance and endpoints.
 
 ## What DMS does not migrate
 
