@@ -215,4 +215,9 @@ resource "aws_dms_replication_task" "this" {
   tags = merge(local.tags, { Name = var.name })
 
   depends_on = [aws_iam_role_policy_attachment.dms_cloudwatch_logs]
+
+  # Started by hand; a later apply must not stop a running migration.
+  lifecycle {
+    ignore_changes = [start_replication_task]
+  }
 }
