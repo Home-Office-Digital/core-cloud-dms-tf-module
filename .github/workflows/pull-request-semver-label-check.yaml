@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Parse the SemVer label
         id: label
         uses: Home-Office-Digital/core-cloud-match-label-action@v1
