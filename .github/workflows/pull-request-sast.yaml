@@ -32,7 +32,7 @@ jobs:
         with:
           terraform_version: ~1.12.0
       - name: terraform init (no backend)
-        uses: Home-Office-Digital/core-cloud-workflow-terraform-actions/actions/init@2f1e7a29dcbb7a9619698ab929cbb5b6a2dd0667 # 1.2.6
+        uses: Home-Office-Digital/core-cloud-workflow-terraform-actions/actions/init@471d5711de5de91b0038057447737074843ad5ae # 1.3.0
         with:
           use-backend: false
           terraform-version: ~1.12.0
