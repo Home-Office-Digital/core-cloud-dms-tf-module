@@ -42,7 +42,7 @@ jobs:
       - name: terraform validate
         run: terraform validate
       - name: Terraform Format
-        uses: Home-Office-Digital/core-cloud-workflow-terraform-actions/actions/fmt@2f1e7a29dcbb7a9619698ab929cbb5b6a2dd0667 # 1.2.6
+        uses: Home-Office-Digital/core-cloud-workflow-terraform-actions/actions/fmt@4f03bc3b5a20c16e6b222bbd3178f927143001ef # 1.4.0
         with:
           recursive: false
       - name: TFLint
